@@ -1,0 +1,62 @@
+version: '2'
+
+volumes:
+  nextcloud:
+  db:
+
+services:
+  db:
+    image: yobasystems/alpine-mariadb:latest
+    container_name: nextclouddb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - </datadb/>:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=/run/secrets/mysql_root
+      - MYSQL_PASSWORD=/run/secrets/mysql_password
+      - MYSQL_DATABASE=/run/secrets/mysql_db
+      - MYSQL_USER=/run/secrets/mysql_user
+    secrets:
+      - mysql_root
+      - mysql_password
+      - mysql_db
+      - mysql_user
+
+  app:
+    image: nextcloud
+    container_name: nextcloud
+    ports:
+      - 8080:80
+      - 443:443
+    links:
+      - db
+    volumes:
+     - </data_nextcloud/>:/var/www/html
+    environment:
+      - MYSQL_ROOT_PASSWORD=/run/secrets/mysql_root
+      - MYSQL_PASSWORD=/run/secrets/mysql_password
+      - MYSQL_DATABASE=/run/secrets/mysql_db
+      - MYSQL_USER=/run/secrets/mysql_user
+      - NEXTCLOUD_ADMIN_PASSWORD=/run/secrets/nextcloud_admin_password
+      - NEXTCLOUD_ADMIN_USER=/run/secrets/nextcloud_admin_user
+    secrets:
+      - mysql_root
+      - mysql_password
+      - mysql_db
+      - mysql_user
+      - nextcloud_admin_password
+      - nextcloud_admin_user
+    restart: always
+
+secrets:
+  nextcloud_admin_password:
+    file: ./nextcloud_admin_password.txt # put admin password to this file
+  nextcloud_admin_user:
+    file: ./nextcloud_admin_user.txt # put admin username to this file
+  mysql_db:
+    file: ./mysql_db.txt # put postgresql db name to this file
+  mysql_password:
+    file: ./mysql_password.txt # put postgresql password to this file
+  mysql_user:
+    file: ./mysql_user.txt # put postgresql username to this file
